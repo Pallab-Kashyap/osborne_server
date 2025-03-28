@@ -2,8 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const rateLimite = require("express-rate-limit");
 const authRouter = require("./src/routes/authRoutes");
-const webhookRouter = require("./src/routes/webhookRoutes");
-const publicationRouter = require("./src/routes/publicationRoutes");
 const highlightsRoute = require("./src/routes/highlights");
 const bookmarkRoutes = require("./src/routes/bookmark");
 const noteRoutes = require("./src/routes/note");
@@ -39,7 +37,7 @@ const port = process.env.PORT
 const startServer = async () => {
   try {
     await connectDB();
-    // await syncDB();
+    await syncDB();
     app.listen(port || 3000, () => console.log("server started"));
   } catch (error) {
     console.log(error);
