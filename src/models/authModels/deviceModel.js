@@ -1,6 +1,5 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
-import User from "./userModel.js";
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../../config/db.js");
 
 const Device = sequelize.define(
   "Device",
@@ -8,7 +7,7 @@ const Device = sequelize.define(
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
-      allowNull: false,
+      primaryKey: true,
     },
     user_id: {
       type: DataTypes.UUID,
@@ -18,14 +17,18 @@ const Device = sequelize.define(
         key: "id",
       },
     },
-    os_type: {
+    device_id: {
       type: DataTypes.STRING,
+      allowNull: false
+    },
+    os_type: {
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     register_time: {
       type: DataTypes.DATE,
-      allowNull: false,
       defaultValue: DataTypes.NOW,
+      allowNull: false,
     },
   },
   {
@@ -34,4 +37,4 @@ const Device = sequelize.define(
   }
 );
 
-export default Device;
+module.exports = Device;

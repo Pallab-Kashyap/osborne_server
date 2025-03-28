@@ -1,12 +1,11 @@
 const { Router } = require('express')
-const { get_device_token, logout } = require('../controller/authController');
+const { get_remote_token, logout, login } = require('../controller/authController');
 const {deviceCount} = require('../middleware/deviceCountMiddleware');
 const auth = require('../middleware/auth');
 
-
 const router = Router();
-
-router.route('/get_device_token').post(deviceCount, get_device_token)
-router.route('/logout').post( auth, logout)
+router.route('/login').post(deviceCount, login)
+router.route('/get_remote_token').get(auth, get_remote_token)
+router.route('/logout').get( auth, logout)
 
 module.exports = router

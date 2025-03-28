@@ -1,84 +1,47 @@
-const { Device, UserToken, RemoteUserToken } = require('../models');
-const jwt = require('jsonwebtoken');
+const { Device, User } = require("../models");
+const asyncWrapper = require("../utils/asyncWrapper");
+const APIError = require("../utils/APIError");
 
-const deleteEarliestDevice = async (username) => {
-  try {
-    const earliestDevice = await Device.findOne({
-      where: { username },
-      order: [['register_time', 'ASC']],
-      include: [
-        { model: UserToken },
-        { model: RemoteUserToken }
-      ]
-    });
+const deleteEarliestDevice = async (userId) => {
+  const earliestDevice = await Device.findOne({
+    where: { user_id: userId },
+    order: [["register_time", "ASC"]],
+  });
 
-    if (!earliestDevice) {
-      return res.send({ message: "hit device limit but no device found" });
-    }
-
-    await UserToken.destroy({
-      where: { device_id: earliestDevice.id }
-    });
-
-    await RemoteUserToken.destroy({
-      where: { id: earliestDevice.RemoteUserToken.id }
-    });
-
-    await earliestDevice.destroy();
-
-  } catch (error) {
-    throw error;
+  if (!earliestDevice) {
+    throw APIError.badRequest("Hit device limit but no device found");
   }
+  await earliestDevice.destroy();
 };
 
-const deviceCount = async (req, res, next) => {
+const deviceCount = asyncWrapper(async (req, res, next) => {
   const { username, deviceId } = req.body;
-
-  if (!username) return res.send({ message: "all fields required" });
-
-  try {
-    const devices = await Device.findAll({
-      where: { username }
-    });
-
-    if (devices.length > 0) {
-      let deviceFound = false;
-      for (const device of devices) {
-        if (device.id === deviceId) {
-          deviceFound = true;
-          const jwtSecret = "aofeooieoeowjwoow";
-          const deviceToken = jwt.sign({ username }, jwtSecret, {
-            expiresIn: "7d",
-          });
-
-          await UserToken.update(
-            { value: deviceToken },
-            { where: { 
-              device_id: deviceId,
-              username: username 
-            }}
-          );
-
-          return res.send({ message: "success", deviceToken: deviceToken });
-        }
-      }
-
-      if (!deviceFound) {
-        if (devices.length >= 3) {
-          await deleteEarliestDevice(username);
-        }
-        next();
-        return;
-      }
-    } else {
-      next();
-      return;
-    }
-  } catch (error) {
-    console.log(error);
-    return res.status(500).send({ message: "internal server error" });
+  if (!username || !deviceId) {
+    throw APIError.badRequest("Username & deviceId are required fields");
   }
-};
+
+  const user = await User.findOne({ where: { username } });
+
+  if (!user) {
+    next();
+    return
+  }
+
+  req.userId = user.id
+
+  const devices = await Device.findAll({
+    where: { user_id: user.id },
+  });
+
+  if (devices && devices.length >= 3) {
+    await deleteEarliestDevice(user.id);
+    next();
+    return;
+  } else {
+    next();
+    return;
+  }
+});
 
 module.exports = {
   deviceCount,

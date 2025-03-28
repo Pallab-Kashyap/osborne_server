@@ -16,12 +16,14 @@ const pool = new Pool({
     connectionString: process.env.DB_URL,
 })
 
-const sequelize = new Sequelize(process.env.DB_URL)
+const sequelize = new Sequelize(process.env.DB_URL, {
+  logging: false
+})
 
 const connectDB = async () => {
     try {
         await sequelize.authenticate();
-        console.log('Connection has been established successfully.');
+        console.log('DB connected successfully');
       } catch (error) {
         console.error('Unable to connect to the database:', error);
       }
@@ -30,5 +32,6 @@ const connectDB = async () => {
 
 module.exports = {
     connectDB,
-    pool
+    pool,
+    sequelize
 }

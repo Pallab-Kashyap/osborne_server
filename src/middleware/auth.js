@@ -1,50 +1,37 @@
-// const pool = require("../config/db");
-// const { findAuthTokenQuery } = require("../dbQuery/user");
-const { RemoteUserToken } = require('../models');
+const { Device } = require('../models');
 const jwt = require("jsonwebtoken");
+const  asyncWrapper  = require('../utils/asyncWrapper');
+const ApiError = require('../utils/APIError');
 
-const auth = async (req, res, next) => {
-  console.log("ent auth");
+const auth = asyncWrapper(async (req, res, next) => {
   const { authorization } = req.headers;
 
-  if (authorization && authorization.startsWith("Bearer")) {
-    try {
-      let token = authorization.split(" ")[1];
-      const jwtSecret = "aofeooieoeowjwoow";
-
-      const { username } = jwt.verify(token, jwtSecret);
-
-      if (username) {
-        // const authToken = await pool.query(findAuthTokenQuery, [username]);
-        const authToken = await RemoteUserToken.findOne({
-          where: { username },
-          order: [['createdAt', 'DESC']]
-        });
-        console.log(authToken.rows);
-        if (authToken) {
-          const exp = authToken.time_expired;
-          const currentTime = new Date();
-          req.authToken = authToken.value;
-          req.deviceToken = token;
-          req.username = username;
-
-          if (exp < currentTime) {
-            return res.send({ message: "auth_token expired" });
-          }
-        } else {
-          return res.send({ message: "auth token not found" });
-        }
-      }
-
-      console.log("ext auth");
-      next();
-    } catch (error) {
-      console.log(error);
-      res.send({ status: "failed", message: "not a valid user" });
-    }
-  } else {
-    res.send({ status: "failed", message: "no token" });
+  if (!authorization || !authorization.startsWith("Bearer")) {
+    throw ApiError.unauthorized("No token provided");
   }
-};
+
+  const token = authorization.split(" ")[1];
+
+  const jwtSecret = process.env.JWT_SECRET
+  if(!jwtSecret) throw ApiError.internal('ENV missing')
+  const { username, userId, deviceId } = jwt.verify(token, jwtSecret);
+
+  if (!username || !userId || !deviceId) {
+    throw ApiError.unauthorized("Invalid token");
+  }
+
+  const device = await Device.findOne({where: { device_id: deviceId}})
+
+  if(!device){
+    throw ApiError.unauthorized('Device not found, please try to login')
+  }
+
+  req.deviceToken = token;
+  req.username = username;
+  req.userId = userId
+  req.deviceId = deviceId
+  
+  next();
+});
 
 module.exports = auth;
