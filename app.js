@@ -34,11 +34,13 @@ app.use("/api/marks", markRoutes);
 
 app.use(errorHandler);
 
+const port = process.env.PORT
+
 const startServer = async () => {
   try {
     await connectDB();
     // await syncDB();
-    app.listen(3000, () => console.log("server started"));
+    app.listen(port || 3000, () => console.log("server started"));
   } catch (error) {
     console.log(error);
   }
