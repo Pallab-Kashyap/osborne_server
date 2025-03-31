@@ -13,10 +13,14 @@ const RemoteUserToken = sequelize.define(
       type: DataTypes.UUID,
       allowNull: false,
       unique: true,
-      referances: {
+      references: {
         model: "user",
         key: "id",
       },
+    },
+    value: {
+      type: DataTypes.TEXT,
+      allowNull: false,
     },
     time_expired: {
       type: DataTypes.DATE,

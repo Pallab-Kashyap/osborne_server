@@ -18,7 +18,7 @@ const UserToken = sequelize.define(
       },
     },
     value: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     time_expired: {

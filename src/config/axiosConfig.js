@@ -6,7 +6,7 @@ const axiosInstance = axios.create({
     headers: {
         'Content-Type': 'application/json',  
     },
-    responseType: 'json',  
+    responseType: 'json',   
 });
 
 module.exports = axiosInstance;

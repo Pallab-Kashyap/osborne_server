@@ -1,5 +1,4 @@
-const { User, Device, UserToken, RemoteUserToken } = require("../models");
-const jwt = require("jsonwebtoken");
+const { User, Device, UserToken, RemoteUserToken } = require("../models/index");
 const Buffer = require("buffer").Buffer;
 const  asyncWrapper  = require("../utils/asyncWrapper");
 const ApiError = require("../utils/APIError");
@@ -32,7 +31,13 @@ try {
         method: "get",
         headers: { Authorization: authHeader },
       }
-    ).then((res) => res.json());
+    )
+    if(result.ok){
+     result = {
+        token: 'dfjewoit323ajeio2',
+        expired: Date.now()
+      }
+    }
 } catch (error) {
   throw ApiError.internal('Osborne server Error')
 }
@@ -78,7 +83,7 @@ try {
       RemoteUserToken.upsert(
         {
           user_id: user.id,
-          value: auth_token,
+          value: deviceToken,
           time_expired: date,
         },
         {
@@ -87,6 +92,7 @@ try {
       ),
     ]);
   } catch (error) {
+    console.log(error);
     throw ApiError.internal("Error in storing data in local database");
   }
 
@@ -107,14 +113,14 @@ const get_remote_token = asyncWrapper(async (req, res) => {
     throw ApiError.unauthorized("Authentication Token not found, please first");
   }
 
-  const exp = authToken.time_expired;
+  const exp = remoteAuthToken.time_expired;
   const currentTime = new Date();
 
   if (exp < currentTime) {
     throw ApiError.unauthorized("Authentication token expired");
   }
 
-  return APIResponse(res, '', { remote_token: remoteAuthToken })
+  return APIResponse.success(res, '', { remote_token: remoteAuthToken.value })
 });
 
 const logout = asyncWrapper(async (req, res) => {

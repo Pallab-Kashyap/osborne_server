@@ -10,15 +10,15 @@ const Highlight = require("./bookFeaturesModels/highlightModel");
 
 const syncDB = async () => {
   //AUTH
-  User.hasOne(RemoteUserToken, { foreignKey: "userId" });
+  User.hasOne(RemoteUserToken, { foreignKey: "userId", onDelete: "CASCADE" });
   Device.belongsTo(User, { foreignKey: "userId", onDelete: "CASCADE" });
   RemoteUserToken.belongsTo(User, { foreignKey: "userId" });
   UserToken.belongsTo(User, { foreignKey: "userId" });
   UserToken.belongsTo(User, { foreignKey: "user_id" });
 
-  await sequelize.sync({});
+  await sequelize.sync({ });
 
-  console.log("Sync completed");
+  console.log("Sync completed")
 };
 
 module.exports = {

@@ -2,6 +2,7 @@ const { Device } = require('../models');
 const jwt = require("jsonwebtoken");
 const  asyncWrapper  = require('../utils/asyncWrapper');
 const ApiError = require('../utils/APIError');
+const { veriryToken } = require('../utils/generateToken');
 
 const auth = asyncWrapper(async (req, res, next) => {
   const { authorization } = req.headers;
@@ -12,9 +13,7 @@ const auth = asyncWrapper(async (req, res, next) => {
 
   const token = authorization.split(" ")[1];
 
-  const jwtSecret = process.env.JWT_SECRET
-  if(!jwtSecret) throw ApiError.internal('ENV missing')
-  const { username, userId, deviceId } = jwt.verify(token, jwtSecret);
+  const { username, userId, deviceId } = veriryToken(token)
 
   if (!username || !userId || !deviceId) {
     throw ApiError.unauthorized("Invalid token");
