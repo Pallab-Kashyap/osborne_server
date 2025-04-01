@@ -7,6 +7,7 @@ const Bookmark = require("./bookFeaturesModels/bookmarkModel");
 const Mark = require("./bookFeaturesModels/markModel");
 const Note = require("./bookFeaturesModels/noteModel");
 const Highlight = require("./bookFeaturesModels/highlightModel");
+const PublicationReader = require("./bookFeaturesModels/publicationReaderModel");
 
 const syncDB = async () => {
   //AUTH
@@ -15,8 +16,18 @@ const syncDB = async () => {
   RemoteUserToken.belongsTo(User, { foreignKey: "userId" });
   UserToken.belongsTo(User, { foreignKey: "userId" });
   UserToken.belongsTo(User, { foreignKey: "user_id" });
+  
+  // Publication Reader relations
+  User.hasMany(PublicationReader, { foreignKey: "userId" });
+  PublicationReader.belongsTo(User, { foreignKey: "userId" });
 
-  await sequelize.sync({ });
+  
+// Bookmark associations
+Bookmark.belongsTo(PublicationReader, { foreignKey: "id" });
+PublicationReader.hasOne(Bookmark, { foreignKey: "id" });
+
+  await sequelize.sync({});
+  // await PublicationReader.sync({ force: true });
 
   console.log("Sync completed")
 };
@@ -26,6 +37,7 @@ module.exports = {
   UserToken,
   Device,
   RemoteUserToken,
+  PublicationReader,
   sequelize,
   syncDB,
 };

@@ -9,6 +9,7 @@ const markRoutes = require("./src/routes/marks");
 const { connectDB } = require("./src/config/db");
 const { syncDB } = require("./src/models");
 const errorHandler = require("./src/utils/globalErrorHandler");
+const { swaggerDocs } = require('./src/swagger');
 const app = express();
 
 const limiter = rateLimite({
@@ -27,9 +28,9 @@ app.use("/api/v1/auth", authRouter);
 // app.use("/api/publications", publicationRouter);
 app.use("/api/highlights", highlightsRoute);
 app.use("/api/bookmarks", bookmarkRoutes);
-app.use("/notes", noteRoutes);
+app.use("/api/v1/notes", noteRoutes);
 app.use("/api/marks", markRoutes);
-
+swaggerDocs(app);
 app.use(errorHandler);
 
 const port = process.env.PORT

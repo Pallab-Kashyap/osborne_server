@@ -28,6 +28,10 @@ const Note = sequelize.define('Note', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  publication_id: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
 }, {
   tableName: 'notes',
   timestamps: false,
