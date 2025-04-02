@@ -1,88 +1,4 @@
-// const { Note, PublicationReader, sequelize } = require('../models');
-// const asyncWrapper = require('../utils/asyncWrapper');
-// const ApiError = require('../utils/APIError');
-// const APIResponse = require('../utils/APIResponse');
 
-// const getNotes = asyncWrapper(async (req, res) => {
-//     const { user_id, publication_id } = req.body;
-
-//     if (!user_id || !publication_id) {
-//         throw ApiError.badRequest('User ID and Publication ID are required');
-//     }
-
-//     const notes = await Note.findAll({
-//         where: { 
-//             id: user_id,
-//             publication_id: publication_id 
-//         },
-//         order: [['page', 'ASC']]
-//     });
-
-//     return APIResponse.success(
-//         res, 
-//         notes.length ? 'Notes retrieved successfully' : 'No notes found',
-//         notes
-//     );
-// });
-
-// const createNote = asyncWrapper(async (req, res) => {
-//     const { user_id, publication_id, page, x, y, color, text } = req.body;
-
-//     if (!user_id || !publication_id || !page || x === undefined || y === undefined || !color) {
-//         throw ApiError.badRequest('Missing required fields');
-//     }
-
-//     const result = await sequelize.transaction(async (t) => {
-//         const syncItem = await PublicationReader.create({
-//             userId: user_id,
-//             publicationId: publication_id
-//         }, { transaction: t });
-
-//         const note = await Note.create({
-//             id: user_id,
-//             publication_id,
-//             page,
-//             x,
-//             y,
-//             color,
-//             text
-//         }, { transaction: t });
-
-//         return { note, sync_id: syncItem.id };
-//     });
-
-//     return APIResponse.success(res, 'Note created successfully', result);
-// });
-
-// const deleteNote = asyncWrapper(async (req, res) => {
-//     const { id } = req.params;
-//     const { publication_id } = req.body;
-
-//     if (!id || !publication_id) {
-//         throw ApiError.badRequest('Note ID and Publication ID are required');
-//     }
-
-//     const note = await Note.findOne({
-//         where: {
-//             id,
-//             publication_id
-//         }
-//     });
-    
-//     if (!note) {
-//         throw ApiError.notFound('Note not found');
-//     }
-
-//     await note.destroy();
-
-//     return APIResponse.success(res, 'Note deleted successfully', { id });
-// });
-
-// module.exports = {
-//     getNotes,
-//     createNote,
-//     deleteNote
-// };
 const { Note, PublicationReader, sequelize } = require('../models');
 const asyncWrapper = require('../utils/asyncWrapper');
 const ApiError = require('../utils/APIError');
@@ -92,50 +8,47 @@ const APIResponse = require('../utils/APIResponse');
  * Get notes for a user and publication
  */
 const getNotes = asyncWrapper(async (req, res) => {
-    const { user_id, publication_id } = req.body;
+    // Check both query parameters and request body for publication_id
+    const publication_id = req.query.publication_id || req.body.publication_id;
+    const userId = req.userId; // From auth middleware
 
-    if (!user_id || !publication_id) {
-        throw ApiError.badRequest('User ID and Publication ID are required');
+    if (!publication_id) {
+        throw ApiError.badRequest('Publication ID is required');
     }
 
-    // First find all publication readers for this user and publication
+    // Find publication readers matching the criteria
     const publicationReaders = await PublicationReader.findAll({
         where: { 
-            userId: user_id,
+            userId,
             publicationId: publication_id 
+        },
+        include: [{
+            model: Note,
+            required: false
+        }]
+    });
+
+    // Extract notes from the results
+    const notes = [];
+    publicationReaders.forEach(pr => {
+        if (pr.Note) {
+            notes.push({
+                id: pr.Note.id,
+                publication_id: pr.publicationId,
+                page: pr.Note.page,
+                x: pr.Note.x,
+                y: pr.Note.y,
+                color: typeof pr.Note.color === 'bigint' ? pr.Note.color.toString() : pr.Note.color,
+                text: pr.Note.text,
+                created_at: pr.Note.createdAt || pr.createdAt
+            });
         }
     });
-
-    // Extract IDs to use in note query
-    const readerIds = publicationReaders.map(pr => pr.id);
-    
-    if (readerIds.length === 0) {
-        return APIResponse.success(res, 'No notes found', []);
-    }
-
-    // Find notes with these reader IDs
-    const notes = await Note.findAll({
-        where: { 
-            id: readerIds
-        },
-        order: [['page', 'ASC']]
-    });
-
-    // Format the response data
-    const formattedNotes = notes.map(note => ({
-        id: note.id,
-        publication_id: note.publication_id,
-        page: note.page,
-        x: note.x,
-        y: note.y,
-        color: note.color,
-        text: note.text
-    }));
 
     return APIResponse.success(
         res, 
         notes.length ? 'Notes retrieved successfully' : 'No notes found',
-        formattedNotes
+        notes
     );
 });
 
@@ -143,116 +56,186 @@ const getNotes = asyncWrapper(async (req, res) => {
  * Create a note
  */
 const createNote = asyncWrapper(async (req, res) => {
-    const { user_id, publication_id, page, x, y, color, text } = req.body;
+    const { publication_id, page, x, y, color, text } = req.body;
+    const userId = req.userId; // From auth middleware
 
-    if (!user_id || !publication_id || !page || x === undefined || y === undefined || !color) {
-        throw ApiError.badRequest('Missing required fields');
+    // Improved validation
+    if (!publication_id) {
+        throw ApiError.badRequest('Publication ID is required');
+    }
+    if (!page || page < 0) {
+        throw ApiError.badRequest('Valid page number is required');
+    }
+    if (typeof x !== 'number' && isNaN(parseFloat(x))) {
+        throw ApiError.badRequest('Valid x coordinate is required');
+    }
+    if (typeof y !== 'number' && isNaN(parseFloat(y))) {
+        throw ApiError.badRequest('Valid y coordinate is required');
+    }
+    if (!color) {
+        throw ApiError.badRequest('Color is required');
     }
 
-    const result = await sequelize.transaction(async (t) => {
-        // Create a publication reader entry to associate user with publication
-        const publicationReader = await PublicationReader.findOrCreate({
-            where: {
-                userId: user_id,
-                publicationId: publication_id
-            },
-            defaults: {
-                userId: user_id,
-                publicationId: publication_id
-            },
-            transaction: t
+    try {
+        const result = await sequelize.transaction(async (t) => {
+            // First create the PublicationReader if it doesn't exist
+            const [publicationReader] = await PublicationReader.findOrCreate({
+                where: {
+                    userId,
+                    publicationId: publication_id
+                },
+                defaults: {
+                    userId,
+                    publicationId: publication_id
+                },
+                transaction: t
+            });
+
+            // Create the note with explicit values
+            const note = await Note.create({
+                publicationReaderId: publicationReader.id,
+                publication_id,
+                page: parseInt(page),
+                x: parseFloat(x),
+                y: parseFloat(y),
+                color: BigInt(color),
+                text: text || '' // Ensure text is not null
+            }, { transaction: t });
+
+            return { 
+                note: {
+                    id: note.id,
+                    publication_id: note.publication_id,
+                    page: note.page,
+                    x: note.x,
+                    y: note.y,
+                    color: note.color.toString(), // Convert BigInt to string
+                    text: note.text,
+                    created_at: note.createdAt
+                }
+            };
         });
 
-        // Use the publication reader ID as the note ID
-        const note = await Note.create({
-            id: publicationReader[0].id, // Using the first result from findOrCreate
-            publication_id,
-            page,
-            x,
-            y,
-            color,
-            text: text || '' // Ensure text is not null
-        }, { transaction: t });
-
-        return { 
-            note: {
-                id: note.id,
-                publication_id: note.publication_id,
-                page: note.page,
-                x: note.x,
-                y: note.y,
-                color: note.color,
-                text: note.text
-            }, 
-            sync_id: publicationReader[0].id 
-        };
-    });
-
-    return APIResponse.success(res, 'Note created successfully', result);
+        return APIResponse.success(res, 'Note created successfully', result);
+    } catch (error) {
+        console.error('Note creation error:', error);
+        throw ApiError.internal('Failed to create note', error);
+    }
 });
 
 /**
  * Update a note
  */
+// const updateNote = asyncWrapper(async (req, res) => {
+//     const { id } = req.params;
+//     const { publication_id, page, x, y, color, text } = req.body;
+//     const userId = req.userId; // From auth middleware
+
+//     if (!id) {
+//         throw ApiError.badRequest('Note ID is required');
+//     }
+    
+//     if (!publication_id) {
+//         throw ApiError.badRequest('Publication ID is required');
+//     }
+
+//     // Verify ownership before updating
+//     const note = await Note.findOne({
+//         where: { id },
+//         include: [{
+//             model: PublicationReader,
+//             where: { userId }
+//         }]
+//     });
+    
+//     if (!note) {
+//         throw ApiError.notFound('Note not found or unauthorized');
+//     }
+
+//     // Update fields that were provided
+//     if (page !== undefined) note.page = parseInt(page);
+//     if (x !== undefined) note.x = parseFloat(x);
+//     if (y !== undefined) note.y = parseFloat(y);
+//     if (color !== undefined) note.color = BigInt(color);
+//     if (text !== undefined) note.text = text;
+
+//     await note.save();
+
+//     return APIResponse.success(res, 'Note updated successfully', { 
+//         id: note.id,
+//         publication_id: note.publication_id,
+//         page: note.page,
+//         x: note.x,
+//         y: note.y,
+//         color: note.color.toString(), // Convert BigInt to string
+//         text: note.text
+//     });
+// });
 const updateNote = asyncWrapper(async (req, res) => {
     const { id } = req.params;
-    const { publication_id, page, x, y, color, text } = req.body;
-
-    if (!id || !publication_id) {
-        throw ApiError.badRequest('Note ID and Publication ID are required');
+    const { text, page, x, y, color } = req.body;
+    const userId = req.userId;
+    
+    if (!id) {
+        throw ApiError.badRequest('Note ID is required');
     }
-
+    
+    // Verify ownership
     const note = await Note.findOne({
-        where: {
-            id,
-            publication_id
-        }
+        where: { id },
+        include: [{
+            model: PublicationReader,
+            where: { userId }
+        }]
     });
     
     if (!note) {
-        throw ApiError.notFound('Note not found');
+        throw ApiError.notFound('Note not found or unauthorized');
     }
-
-    // Update fields that were provided
-    if (page !== undefined) note.page = page;
-    if (x !== undefined) note.x = x;
-    if (y !== undefined) note.y = y;
-    if (color !== undefined) note.color = color;
-    if (text !== undefined) note.text = text;
-
-    await note.save();
-
-    return APIResponse.success(res, 'Note updated successfully', { 
+    
+    // Only update fields that were provided
+    const updates = {};
+    if (page !== undefined) updates.page = parseInt(page);
+    if (x !== undefined) updates.x = parseFloat(x);
+    if (y !== undefined) updates.y = parseFloat(y);
+    if (color !== undefined) updates.color = BigInt(color);
+    if (text !== undefined) updates.text = text;
+    
+    await note.update(updates);
+    
+    // Return the updated note
+    return APIResponse.success(res, 'Note updated successfully', {
         id: note.id,
         publication_id: note.publication_id,
         page: note.page,
         x: note.x,
         y: note.y,
-        color: note.color,
+        color: note.color.toString(),
         text: note.text
     });
 });
-
 /**
  * Delete a note
  */
 const deleteNote = asyncWrapper(async (req, res) => {
     const { id } = req.params;
-    const { publication_id } = req.body;
+    const userId = req.userId; // From auth middleware
 
-    if (!id || !publication_id) {
-        throw ApiError.badRequest('Note ID and Publication ID are required');
+    if (!id) {
+        throw ApiError.badRequest('Note ID is required');
     }
 
+    // Verify ownership before deletion
     const note = await Note.findOne({
-        where: {
-            id,
-            publication_id
-        }
+        where: { id },
+        include: [{
+            model: PublicationReader,
+            where: { userId }
+        }]
     });
     
     if (!note) {
-        throw ApiError.notFound('Note not found');
+        throw ApiError.notFound('Note not found or unauthorized');
     }
 
     await note.destroy();
