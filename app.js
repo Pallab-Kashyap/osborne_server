@@ -39,7 +39,7 @@ const startServer = async () => {
   try {
     await connectDB();
     await syncDB();
-    app.listen(port || 3000, () => console.log("server started"));
+    app.listen(port, () => console.log("server started"));
   } catch (error) {
     console.log(error);
   }
