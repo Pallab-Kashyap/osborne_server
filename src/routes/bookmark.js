@@ -77,6 +77,19 @@ const auth = require('../middleware/auth');
  */
 
 // Protect all bookmark routes with auth
+// router.use(auth);
+
+// router.route('/')
+//   .get(getBookmarks)
+//   .post(createBookmark);
+
+// router.route('/:id')
+//   .delete(deleteBookmark);
+
+// module.exports = router;
+
+
+// Protect all bookmark routes with auth
 router.use(auth);
 
 router.route('/')
