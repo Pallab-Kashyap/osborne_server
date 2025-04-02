@@ -7,7 +7,7 @@ const getHighlights = asyncWrapper(async (req, res) => {
     const { publicationId } = req.params;
     const userId = req.userId; 
 
-    console.log(publicationId);
+    
 
     const publicationReader = await PublicationReader.findOne({
         where: { userId, publicationId }
