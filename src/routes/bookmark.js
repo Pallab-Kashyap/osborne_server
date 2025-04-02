@@ -1,26 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { getBookmarks, createBookmark, deleteBookmark } = require('../controller/bookmarkController');
+const auth = require('../middleware/auth');
 
-// router.route('/')
-//   .get(getBookmark)
-//   .post(createBookmark);
+// Protect all bookmark routes with auth
+router.use(auth);
 
-// router.route('/:id')
-//   .delete(deleteBookmark);
-
-// module.exports = router;
-
-// const express = require('express');
-// const router = express.Router();
-// const { getBookmarks, createBookmark, deleteBookmark } = require('../controller/bookmarkController');
-
-// Route for getting and creating bookmarks
 router.route('/')
   .get(getBookmarks)
   .post(createBookmark);
 
-// Route for deleting bookmarks
 router.route('/:id')
   .delete(deleteBookmark);
 

@@ -21,17 +21,24 @@ const syncDB = async () => {
   User.hasMany(PublicationReader, { foreignKey: "userId" });
   PublicationReader.belongsTo(User, { foreignKey: "userId" });
 
-  
-// Bookmark associations
-Bookmark.belongsTo(PublicationReader, { foreignKey: "id" });
-PublicationReader.hasOne(Bookmark, { foreignKey: "id" });
+  // Bookmark associations
+  PublicationReader.hasOne(Bookmark, { 
+    foreignKey: "publicationReaderId",
+    sourceKey: "id",
+    onDelete: 'CASCADE'
+  });
+  Bookmark.belongsTo(PublicationReader, { 
+    foreignKey: "publicationReaderId",
+    targetKey: "id"
+  });
 
-  await sequelize.sync({});
-  // await PublicationReader.sync({ force: true });
+  // Sync both tables to ensure foreign key constraints are properly set up
+  // await PublicationReader.sync({ alter: true });
+  await Bookmark.sync({ force: true });
 
   console.log("Sync completed")
 };
-
+ 
 module.exports = {
   User,
   UserToken,
@@ -40,4 +47,8 @@ module.exports = {
   PublicationReader,
   sequelize,
   syncDB,
+  Bookmark,
+  Mark,
+  Note,
+  Highlight
 };
