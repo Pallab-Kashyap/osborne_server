@@ -42,12 +42,23 @@ const syncDB = async () => {
     foreignKey: "publicationReaderId",
     targetKey: "id"
   });
+  Highlight.belongsTo(PublicationReader, { 
+    foreignKey: "publication_reader_id",
+    targetKey: "id"
+  });
+  Mark.belongsTo(PublicationReader, { 
+    foreignKey: "publication_reader_id",
+    targetKey: "id"
+  });
+  
 
   // Sync both tables to ensure foreign key constraints are properly set up
   // await PublicationReader.sync({ alter: true });
+
   // await Note.sync({ alter: true });
   // await Bookmark.sync({ force: true });
-await sequelize.sync({ alter: true });
+await sequelize.sync();
+
   console.log("Sync completed")
 };
  

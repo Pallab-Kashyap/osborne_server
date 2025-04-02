@@ -23,5 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
+.env
 publicationController.js
 webhookController.js

@@ -4,9 +4,17 @@ const {sequelize} = require('../../config/db');
 
 const Highlight = sequelize.define('Highlight', {
   id: {
-    type: DataTypes.STRING,
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
+  },
+  publication_reader_id: {
+    type: DataTypes.UUID,
     allowNull: false,
+    references: {
+      model: 'publication_readers',
+      key: 'id'
+    }
   },
   page: {
     type: DataTypes.INTEGER,
