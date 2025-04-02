@@ -24,6 +24,7 @@ const getBookmarks = asyncWrapper(async (req, res) => {
     }]
   });
 
+
   // Extract bookmarks from the results
   const bookmarks = [];
   publicationReaders.forEach(pr => {
