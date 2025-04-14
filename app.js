@@ -27,7 +27,7 @@ app.use("/api/v1/auth", authRouter);
 // app.use("/api/webhook", webhookRouter);
 // app.use("/api/publications", publicationRouter);
 app.use("/api/v1/highlights", highlightsRoute);
-app.use("/api/bookmarks", bookmarkRoutes);
+app.use("/api/v1/bookmarks", bookmarkRoutes);
 app.use("/api/v1/notes", noteRoutes);
 app.use("/api/v1/marks", markRoutes);
 swaggerDocs(app);
@@ -39,7 +39,7 @@ const startServer = async () => {
   try {
     await connectDB();
     await syncDB();
-    app.listen(port || 3000, () => console.log("server started"));
+    app.listen(port, () => console.log("server started"));
   } catch (error) {
     console.log(error);
   }

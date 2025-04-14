@@ -29,7 +29,7 @@ const getBookmarks = asyncWrapper(async (req, res) => {
   publicationReaders.forEach(pr => {
     if (pr.Bookmark) {
       bookmarks.push({
-        id: pr.id,
+        id: pr.Bookmark.id,
         publication_id: pr.publicationId,
         page: pr.Bookmark.page,
         created_at: pr.createdAt
@@ -51,49 +51,52 @@ const createBookmark = asyncWrapper(async (req, res) => {
     throw ApiError.badRequest("Missing required fields: page and publication_id are required");
   }
 
-  // First check if publication reader already exists for this publication and user
-  let publicationReader = await PublicationReader.findOne({
-    where: {
-      userId,
-      publicationId: publication_id
+  try {
+    // First check if publication reader already exists for this publication and user
+    let publicationReader = await PublicationReader.findOne({
+      where: {
+        userId,
+        publicationId: publication_id
+      }
+    });
+
+    // If publication reader doesn't exist, create it
+    if (!publicationReader) {
+      publicationReader = await PublicationReader.create({
+        userId,
+        publicationId: publication_id
+      });
     }
-  });
 
-  // If publication reader doesn't exist, create it
-  if (!publicationReader) {
-    publicationReader = await PublicationReader.create({
-      userId,
-      publicationId: publication_id
+    // Check if bookmark already exists for this publication reader
+    let bookmark = await Bookmark.findOne({
+      where: { publicationReaderId: publicationReader.id }
     });
+
+    let message = "Bookmark created successfully";
+    if (bookmark) {
+      // If exists, update the bookmark
+      bookmark.page = page;
+      await bookmark.save();
+      message = "Bookmark updated successfully";
+    } else {
+      // If not exists, create new
+      bookmark = await Bookmark.create({
+        publicationReaderId: publicationReader.id,
+        page
+      });
+    }
+
+    return APIResponse.success(res, message, {
+      data: {
+        id: bookmark.id,
+        publication_id,
+        page: bookmark.page
+      },
+    });
+  } catch (error) {
+    throw ApiError.internal("Failed to create/update bookmark", error);
   }
-
-  // Check if bookmark already exists for this publication reader
-  let bookmark = await Bookmark.findOne({
-    where: { publicationReaderId: publicationReader.id }
-  });
-
-  let message = "Bookmark created successfully";
-  if (bookmark) {
-    // If exists, update the bookmark
-    bookmark.page = page;
-    await bookmark.save();
-    message = "Bookmark updated successfully";
-  } else {
-    // If not exists, create new
-    bookmark = await Bookmark.create({
-      publicationReaderId: publicationReader.id,
-      page
-    });
-  } 
-
-  return APIResponse.success(res, message, {
-    data: {
-      id: publicationReader.id,
-      publication_id,
-      page: bookmark.page
-    },
-    sync_id: publicationReader.id
-  });
 });
 
 /**
