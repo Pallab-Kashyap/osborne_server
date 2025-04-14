@@ -56,6 +56,7 @@ const syncDB = async () => {
   // await PublicationReader.sync({ alter: true });
 
   // await Note.sync({ alter: true });
+    // await Highlight.sync({force: true});
     await sequelize.sync();
 
   console.log("Sync completed")

@@ -2,6 +2,7 @@ const { PublicationReader, Highlight } = require('../models');
 const APIError = require('../utils/APIError');
 const APIResponse = require('../utils/APIResponse');
 const asyncWrapper = require('../utils/asyncWrapper');
+const { Op } = require('sequelize');
 
 const getHighlights = asyncWrapper(async (req, res) => {
     const { publicationId } = req.params;
@@ -37,7 +38,7 @@ const getHighlightsByPage = asyncWrapper(async (req, res) => {
     const highlights = await Highlight.findAll({
         where: {
             publication_reader_id: publicationReader.id,
-            pageNumber: page
+            pageNumber: { [Op.contains]: [parseInt(page, 10)] }
         }
     });
 
@@ -45,8 +46,18 @@ const getHighlightsByPage = asyncWrapper(async (req, res) => {
 });
 
 const createHighlight = asyncWrapper(async (req, res) => {
-    const { publicationId, pageNumber, x, y, height, width, text } = req.body;
+    let { publicationId, pageNumber, x, y, height, width, text } = req.body;
     const userId = req.userId; // Assuming you have user in request from auth middleware
+
+    // Convert fields to arrays if they are not already.
+    x = Array.isArray(x) ? x : [x];
+    y = Array.isArray(y) ? y : [y];
+    height = Array.isArray(height) ? height : [height];
+    width = Array.isArray(width) ? width : [width];
+    pageNumber = Array.isArray(pageNumber) ? pageNumber : [pageNumber];
+    if (text !== undefined && text !== null) {
+        text = Array.isArray(text) ? text : [text];
+    }
 
     // Find or create PublicationReader record
     const [publicationReader] = await PublicationReader.findOrCreate({

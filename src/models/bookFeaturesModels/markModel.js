@@ -31,7 +31,7 @@ const Mark = sequelize.define('Mark', {
   },
 }, {
   tableName: 'marks',
-  timestamps: false,
+  timestamps: true,
 });
 
 module.exports = Mark;

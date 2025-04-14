@@ -17,32 +17,32 @@ const Highlight = sequelize.define('Highlight', {
     }
   },
   x: {
-    type: DataTypes.DOUBLE,
+    type: DataTypes.ARRAY(DataTypes.DOUBLE),
     allowNull: false,
   },
   y: {
-    type: DataTypes.DOUBLE,
+    type: DataTypes.ARRAY(DataTypes.DOUBLE),
     allowNull: false,
   },
   height: {
-    type: DataTypes.DOUBLE,
+    type: DataTypes.ARRAY(DataTypes.DOUBLE),
     allowNull: false,
   },
   width: {
-    type: DataTypes.DOUBLE,
+    type: DataTypes.ARRAY(DataTypes.DOUBLE),
     allowNull: false,
   },
   text: {
-    type: DataTypes.TEXT,
+    type: DataTypes.ARRAY(DataTypes.TEXT),
     allowNull: true,
   },
   pageNumber: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
     allowNull: false,
   },
 }, {
   tableName: 'highlights',
-  timestamps: false,
+  timestamps: true,
 });
 
 module.exports = Highlight;
