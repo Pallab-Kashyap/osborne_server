@@ -1,16 +1,31 @@
 const express = require("express");
+const fs =  require('fs')
+const path =  require('path')
+const morgan =  require('morgan')
+const logger = require('./src/utils/logger')
+
+
 const bodyParser = require("body-parser");
 const rateLimite = require("express-rate-limit");
 const authRouter = require("./src/routes/authRoutes");
 const highlightsRoute = require("./src/routes/highlightRoutes");
 const bookmarkRoutes = require("./src/routes/bookmark");
-const noteRoutes = require("./src/routes/note");
+const noteRoutes = require("./src/routes/note") ;
 const markRoutes = require("./src/routes/marksRoutes");
 const { connectDB } = require("./src/config/db");
 const { syncDB } = require("./src/models");
 const errorHandler = require("./src/utils/globalErrorHandler");
 const { swaggerDocs } = require('./src/swagger');
+
 const app = express();
+
+fs.mkdirSync(path.join('.', 'logs'), { recursive: true });
+
+const morganStream = {
+  write: (message) => logger.info(message.trim()),
+};
+
+app.use(morgan('combined', { stream: morganStream }));
 
 const limiter = rateLimite({
   max: 50,

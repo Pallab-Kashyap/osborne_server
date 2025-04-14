@@ -1,6 +1,8 @@
 const ApiError = require("./APIError.js");
+const logger = require("./logger.js");
 
 const errorHandler = (err, req, res, next) => {
+  logger.error(`Error: ${err.message}\n${err.stack}`);
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
       status: false,
