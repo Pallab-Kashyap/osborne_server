@@ -57,7 +57,7 @@ const syncDB = async () => {
 
   // await Note.sync({ alter: true });
   // await Bookmark.sync({ force: true });
-await sequelize.sync();
+    await sequelize.sync();
 
   console.log("Sync completed")
 };
