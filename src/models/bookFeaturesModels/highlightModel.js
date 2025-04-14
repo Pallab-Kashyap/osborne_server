@@ -1,6 +1,6 @@
 // models/Highlight.js
 const { DataTypes } = require('sequelize');
-const {sequelize} = require('../../config/db');
+const { sequelize } = require('../../config/db');
 
 const Highlight = sequelize.define('Highlight', {
   id: {
@@ -16,21 +16,29 @@ const Highlight = sequelize.define('Highlight', {
       key: 'id'
     }
   },
-  page: {
-    type: DataTypes.INTEGER,
+  x: {
+    type: DataTypes.DOUBLE,
     allowNull: false,
   },
-  start: {
-    type: DataTypes.INTEGER,
+  y: {
+    type: DataTypes.DOUBLE,
     allowNull: false,
   },
-  end: {
-    type: DataTypes.INTEGER,
+  height: {
+    type: DataTypes.DOUBLE,
+    allowNull: false,
+  },
+  width: {
+    type: DataTypes.DOUBLE,
     allowNull: false,
   },
   text: {
     type: DataTypes.TEXT,
     allowNull: true,
+  },
+  pageNumber: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
 }, {
   tableName: 'highlights',

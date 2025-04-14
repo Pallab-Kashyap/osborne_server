@@ -7,7 +7,6 @@ const getHighlights = asyncWrapper(async (req, res) => {
     const { publicationId } = req.params;
     const userId = req.userId; 
 
-    console.log(publicationId);
 
     const publicationReader = await PublicationReader.findOne({
         where: { userId, publicationId }
@@ -26,7 +25,7 @@ const getHighlights = asyncWrapper(async (req, res) => {
 
 const getHighlightsByPage = asyncWrapper(async (req, res) => {
     const { publicationId, page } = req.params;
-    const userId = req.userId; // Using req.userId
+    const userId = req.userId; 
 
     const publicationReader = await PublicationReader.findOne({
         where: { userId, publicationId }
@@ -39,7 +38,7 @@ const getHighlightsByPage = asyncWrapper(async (req, res) => {
     const highlights = await Highlight.findAll({
         where: {
             publication_reader_id: publicationReader.id,
-            page: page
+            pageNumber: page
         }
     });
 
@@ -47,7 +46,7 @@ const getHighlightsByPage = asyncWrapper(async (req, res) => {
 });
 
 const createHighlight = asyncWrapper(async (req, res) => {
-    const { publicationId, page, start, end, text } = req.body;
+    const { publicationId, pageNumber, x, y, height, width, text } = req.body;
     const userId = req.userId; // Assuming you have user in request from auth middleware
 
     // Find or create PublicationReader record
@@ -58,9 +57,11 @@ const createHighlight = asyncWrapper(async (req, res) => {
 
     const highlight = await Highlight.create({
         publication_reader_id: publicationReader.id,
-        page,
-        start,
-        end,
+        pageNumber,
+        x,
+        y,
+        height,
+        width,
         text
     });
 
