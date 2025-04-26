@@ -27,12 +27,15 @@ const getBookmarks = asyncWrapper(async (req, res) => {
   // Extract bookmarks from the results
   const bookmarks = [];
   publicationReaders.forEach(pr => {
-    if (pr.Bookmark) {
-      bookmarks.push({
-        id: pr.Bookmark.id,
-        publication_id: pr.publicationId,
-        page: pr.Bookmark.page,
-        created_at: pr.createdAt
+    // Check if Bookmarks array is non-empty
+    if (pr.Bookmarks && pr.Bookmarks.length > 0) {
+      pr.Bookmarks.forEach(bookmark => {
+        bookmarks.push({
+          id: bookmark.id,
+          publication_id: pr.publicationId,
+          page: bookmark.page,
+          created_at: pr.createdAt
+        });
       });
     }
   });
