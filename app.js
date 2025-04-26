@@ -18,6 +18,7 @@ const errorHandler = require("./src/utils/globalErrorHandler");
 const { swaggerDocs } = require('./src/swagger');
 
 const app = express();
+const client = require("prom-client") 
 
 fs.mkdirSync(path.join('.', 'logs'), { recursive: true });
 
@@ -32,6 +33,8 @@ const limiter = rateLimite({
   windowMs: 60 * 1000,
   message: "to many request",
 });
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics({ register: client.register });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -45,6 +48,16 @@ app.use("/api/v1/highlights", highlightsRoute);
 app.use("/api/v1/bookmarks", bookmarkRoutes);
 app.use("/api/v1/notes", noteRoutes);
 app.use("/api/v1/marks", markRoutes);
+app.get("/api/v1/metrics", async (req, res) => { 
+  res.setHeader("Content-Type", client.register.contentType); 
+  try {
+    const metrics = await client.register.metrics();
+    res.send(metrics);
+  } catch (error) {
+    console.error("error geying matrics", error);
+    res.status(500).send("error matrics mecs");
+  }
+});
 swaggerDocs(app);
 app.use(errorHandler);
 

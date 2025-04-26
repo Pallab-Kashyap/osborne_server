@@ -33,7 +33,7 @@ const syncDB = async () => {
   });
 
   // Bookmark associations
-  PublicationReader.hasOne(Bookmark, { 
+  PublicationReader.hasMany(Bookmark, { 
     foreignKey: "publicationReaderId",
     sourceKey: "id",
     onDelete: 'CASCADE'

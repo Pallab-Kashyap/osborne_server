@@ -68,26 +68,13 @@ const createBookmark = asyncWrapper(async (req, res) => {
       });
     }
 
-    // Check if bookmark already exists for this publication reader
-    let bookmark = await Bookmark.findOne({
-      where: { publicationReaderId: publicationReader.id }
+    // Create new bookmark
+    const bookmark = await Bookmark.create({
+      publicationReaderId: publicationReader.id,
+      page
     });
 
-    let message = "Bookmark created successfully";
-    if (bookmark) {
-      // If exists, update the bookmark
-      bookmark.page = page;
-      await bookmark.save();
-      message = "Bookmark updated successfully";
-    } else {
-      // If not exists, create new
-      bookmark = await Bookmark.create({
-        publicationReaderId: publicationReader.id,
-        page
-      });
-    }
-
-    return APIResponse.success(res, message, {
+    return APIResponse.success(res, "Bookmark created successfully", {
       data: {
         id: bookmark.id,
         publication_id,
@@ -95,7 +82,7 @@ const createBookmark = asyncWrapper(async (req, res) => {
       },
     });
   } catch (error) {
-    throw ApiError.internal("Failed to create/update bookmark", error);
+    throw ApiError.internal("Failed to create bookmark", error);
   }
 });
 
