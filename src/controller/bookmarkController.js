@@ -40,7 +40,17 @@ const getBookmarks = asyncWrapper(async (req, res) => {
     }
   });
 
-  return APIResponse.success(res, "Bookmarks retrieved successfully", { bookmarks });
+  // Filter out duplicate bookmarks based on 'page'
+  const unique = {};
+  const uniqueBookmarks = [];
+  bookmarks.forEach(b => {
+    if (!unique[b.page]) {
+      unique[b.page] = true;
+      uniqueBookmarks.push(b);
+    }
+  });
+
+  return APIResponse.success(res, "Bookmarks retrieved successfully", { bookmarks: uniqueBookmarks });
 });
 
 /**
@@ -68,6 +78,23 @@ const createBookmark = asyncWrapper(async (req, res) => {
       publicationReader = await PublicationReader.create({
         userId,
         publicationId: publication_id
+      });
+    }
+
+    // Check if a bookmark with the same page already exists for this publicationReader
+    const existingBookmark = await Bookmark.findOne({
+      where: {
+        publicationReaderId: publicationReader.id,
+        page
+      }
+    });
+    if (existingBookmark) {
+      return APIResponse.success(res, "Bookmark already exists", {
+        data: {
+          id: existingBookmark.id,
+          publication_id,
+          page: existingBookmark.page
+        }
       });
     }
 
